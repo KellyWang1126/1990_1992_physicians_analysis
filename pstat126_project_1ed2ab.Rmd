@@ -1,0 +1,196 @@
+---
+output: pdf_document
+---
+
+```{r message=FALSE, echo=FALSE}
+library(outliers)
+library(dplyr)
+library(ggplot2)
+library(alr4)
+CDI <- read.csv('CDI.csv')
+attach(CDI)
+```
+
+From the scale-location plot, we notice that the variance seems to decrease. We will explore this further by extracting only **log(TotalPop)** since it has largest estimated coefficient.
+
+
+##Scale-location Plot
+```{r}
+CDI_I.lm5 <- lm(log(Physicians)~log(TotalPop))
+plot(CDI_I.lm5, which=3)
+```
+
+From the scale-location residual plot, we notice that there are more points on the left area than on the right area. Besides, it seems that variance decreases with **log(TotalPop)** but we are not sure about that. To conclude our guess is correct or not, we will perform a test for constant variance.
+
+##Test For Constant Variance
+$H_0$: Constant variance holds\newline
+$H_1$: Non-constant variance holds
+
+```{r}
+ncvTest(CDI_I.lm5)
+```
+Since p-value = 0.58682 which is greater than usual test level $\alpha$ = 0.05, we fail to reject the hull hypothesis. Therefore, we conclude that the variance is actually constant. \newline
+Since our model is fitted well now, we will summerize our analysis and some findings here. \newline
+
+##Summary
+In our original model, we notice that **LandArea** is not significant since its p-value is much greater than usual test level $\alpha$ = 0.05. **IncPerCap** has value around 0.05, which means that it is not very significant but useful than **LandArea**. **log(TotalPop)** has smallest p-value and thus we could conclude that the estimated coefficient for **log(TotalPop)** is definitely not 0. We can get same conclusion from the added variable plots. After controlling the effects of other variables, **log(TotalPop)** has a strong positive linear relationship with **Physicians**. Besides, **LandArea** has a weak negative linear relationship with **Physicians** and **IncPerCap** has very weak relationship with **Physicians** since the linear line is almost horizontal. And is this model, $R^2$ = 61.75% of variability in response **Physicians** is explained by a linear relationship with all predictors.
+$$
+Physicians \sim log(TotalPop) + LandArea + IncPerCap
+$$
+However, after checking the diagnostics, we find that our original model does not satisfy any of the linear regression assumptions. Therefore, we need some transformations for our original model. After investigate possible transformations, we apply logarithms on our reponse **Physicians** and predictor **LandArea** and refit our model as following. And this time,  $R^2$ = 83.75% of variability in **log(Physicians)** is explained by by a linear relationship with all predictors.. And higher $R^2$ here means that our new model is better than our original model. And our 95% confident intervals for each coefficients in this new model also confirm the existence of a linear relationship between the predictors and response.
+$$
+log(Physicians) \sim log(TotalPop) + log(LandArea) + IncPerCap
+$$
+Though our new model is much better than before, we find that the variance looks like non-constant with **log(TotalPop)** from the scale-location residual plot. However, after performing a test, we conclude that the variance is actually constant.
+
+After analyzing our model, we find that **TotalPop** has a positive relationship with **Physicians** and **LandArea** has a negative relationship with **Physicians**. Though **IncPerCap** also has a positive relationship with **Physicians**, the estimated coefficient is very close to 0 and we conclude that **IncPerCap** almost has no effect on **Physicians**. Specifically, if  **TotalPop** changes by 100p% with all other predictors constant, $100[(1+p)^{1.258}-1]$ percentage change will apply on expected **Physicians**; If  **log(LandArea)** changes by 100p% with all other predictors constant, $100[(1+p)^{-0.1080}-1]$ percentage change will apply on expected **Physicians**
+
+It is very interesting that the **Physicians** almost has no relationship with **IncPerCap**. Before analyzing the data, we thought **IncPerCap** will have a positive relationship with **Physicians**, since more money usually stands for better education and better education is likely to produce more physicians. However, the data told us that was not what really happened. Our speculation that the more money producing better education does not hold. In order to be a physicians, you have to have good education. But not everyone invest their money to their or their children's education. More money could provide better privacy school and expensive books, but it could also provide more video games, more spoiling and more temptations. With these two aspects balancing with each other, **IncPerCap** could probably turn to be useless in our model in the end.
+
+##New Model
+
+From our model above, we already know that **TotalPop** has a strong association with our target **Physicians**. In the following analysis, we will study the linear relationship of **Physicians** with  **TotalPop** and  **Region**..\newline
+We will start with fitting our new model.
+$$
+Physicians \sim TotalPop + Region
+$$
+```{r}
+CDI_II.lm <- lm(Physicians~factor(Region)+TotalPop+factor(Region):TotalPop)
+anova(CDI_II.lm)
+```
+
+
+##Fit Model
+```{r}
+CDI_II.lm <- lm(Physicians~TotalPop+factor(Region))
+summary(CDI_II.lm)
+```
+
+Now we will check diagnostics to see whether whether our model satisfies three linear assumptions or not. 
+
+##Check Diagnostics
+###Assumption1 - Linearity: Residual vs Fitted plot
+```{r}
+plot(CDI_II.lm, which=1)
+```
+
+The linearity is violated because the residuals does not bounce randomly around the horizontal line residuals = 0.
+
+###Assumption2 - Normality: QQ-plot
+```{r}
+plot(CDI_II.lm, which=2)
+```
+
+
+The normality is violated because the standardized residuals are not evenly spread around the reference line and the plot has a clear heavy-tail pattern.
+
+###Assumption 3 - Constant Variance: Scale-Location Plot
+```{r}
+plot(CDI_II.lm, which=3)
+```
+
+The constant variance is violated because the residuals spread more and more narrowly as the the fitted values increase.\newline
+We will now check the outliers.
+
+###Testing for outliers
+```{r}
+outlierTest(CDI_II.lm)
+```
+We found 6 outliers in our dataset.\newline
+Since our model does not satisfy any of the linear regression assumptions and outliers exist in our data, we will try some transformations for our model.
+
+##Transformation
+We will try some transformations for predictors **TotalPop** and **Region** first.
+
+###Transformating Predictors
+```{r}
+#Scatter Matrix Plot
+pairs(~Physicians+TotalPop+factor(Region))
+```
+
+Some observations:\newline
+  1. The range for **TotalPop** is very large, from 0 to $4\times10^6$. Therefore, logarithm is likely to be appropriate for it.\newline
+  2. Since **Region** is a categorical variable, we will not apply any transformations on it.\newline
+  
+Because of observation 2, we will not transform **Region**. Therefore, we only need to try some transformations for **TotalPop**.
+```{r}
+CDI.pt = powerTransform(TotalPop ~ 1, CDI)
+summary(CDI.pt)
+```
+
+The 95% confidence interval contain -0.5. However, since power of -0.5 is hard to interpret and the range for **TotalPop** is broad, we will just apply logarithm for **TotalPop**.\newline
+Before doing that, we will check a two-dimentional scatter plot to make sure that logarithm is a appropriate transformtion.
+```{r}
+invTranPlot(Physicians~TotalPop, lambda = c(0), optimal = F, xlab  = "TotalPop", ylab = "Physicians")
+```
+
+From above plot, we find that **TotalPop** with logarithm transformation fits in a good way. Therefore, we will take this transformation. And we will look the matrix plot again after applying transformation to **TotalPop**.
+```{r}
+pairs(~Physicians+log(TotalPop)+factor(Region))
+```
+
+Now we will find a proper transformation for response **Physicians** using the already transformed predcitors. We will use BoxCox method for **Physicians**.
+
+###Transforming Response
+```{r}
+bc = boxCox(Physicians~log(TotalPop)+factor(Region))
+lambda.opt = bc$x[which.max(bc$y)]
+lambda.opt
+```
+The best optional for lambda is 0.02020202. But since the power of 0.02020202 is hard to interpret and 0 in between our 95% confidence interval, we will choose log transformation here to transform response **Physicians**.\newline
+For now, we are done with all transformations. And before we move on, we will check diagnostics and scatter matrix plot again.
+$$
+log(Physicians) \sim log(TotalPop) + Region
+$$
+
+###Check Diagnostics After Transformations
+```{r}
+CDI_II.lm2 <- lm(log(Physicians)~log(TotalPop)+factor(Region))
+par(mfrow = c(1, 3)) 
+for(i in 1:3){
+  plot(CDI_II.lm2, which = i) 
+  }
+```
+
+We have already refitted the new model using appropriate transformations as **CDI_II.lm2**. We will first visualize our data by the scatter matrix plot.\newline
+
+###Scatter Matrix Plot After Transformations
+```{r}
+pairs(~log(Physicians)+log(TotalPop)+factor(Region))
+```
+
+```{r}
+summary(CDI_II.lm2)
+```
+From the summary of our new model, we notice that the estimated differences between Region1 and Region2, Region3, Region4 separately are all very small. To see this directly, we will write one equation for each region.
+
+###Region 1
+$$
+E[log(Physicians)] = -10.41248 + 1.33167log(TotalPop) 
+$$
+
+###Region 2
+$$
+E[log(Physicians)] = -10.52481 + 1.33167log(TotalPop)
+$$
+
+###Region 3
+$$
+E[log(Physicians)] = -10.43716 + 1.33167log(TotalPop)
+$$
+
+###Region 4
+$$
+E[log(Physicians)] = -10.54136 + 1.33167log(TotalPop) 
+$$
+We can see that the above four equations are very similar to each other given different regions. The intercepts are slightly different and the estimated coefficients are the same for **log(TotalPop)**. Since the four mean equations have same slope, they are parallel to each other, which is the reason our regression model is called parallel regression model. We could obtain same conclusion from the following plot.
+
+###Plot log(TotalPop) vs log(Physicians)
+```{r}
+ggplot(CDI, aes(log(TotalPop), log(Physicians), color=factor(Region)))+  
+  geom_point() + 
+  labs(x = 'Logarithm Total Population', 
+       y = 'Logarithm Number of Physicians',
+       title = 'Logarithm Total population vs Logarithm Number of Physicians (1990)') +
+  geom_smooth(method=lm, se=FALSE)
+```
