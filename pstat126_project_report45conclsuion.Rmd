@@ -1,8 +1,0 @@
----
-output: pdf_document
----
-
-##Problem 5
-Questions of Interest: Describe in plain English the questions that your analyses will answer. Scientific, not statistical, terminology should be used here. For example, words like 'association', 'effect', or 'relationship' are okay while 'p-value', 'coefficient', or 'regression' are not.
-
-We are interested which factors have associations with our target **Physicians**, which is the number of professionally active nonfederal physicians during 1990. Specifically, we will explore the relationship of **physicians** and some features, especially **TotalPop**, **LandArea**, **IncPerCap**, **Region**, **Pop65**, **Crimes**, **Bachelor**, **Poverty**, **PersonalInc**. If there exists relationship between **Physicians** and other features, is the relationship in positive proportionor negative proportion? And how strong is the relationship? How could we interpret their associations? If the association is not easy to explain, how could we apply some transformtions to make the association more linear and thus easier to interpret? We will answer all these questions during our analysis.
